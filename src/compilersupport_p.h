@@ -147,14 +147,18 @@
 #  endif
 #endif
 #ifndef cbor_ntohs
-#  include <arpa/inet.h>
-#  define cbor_ntohs        ntohs
-#  define cbor_htons        htons
+#   define cbor_ntohs(x) (((uint16_t)x >> 8) | ((uint16_t)x << 8))
+#   define cbor_htons    cbor_ntohs
+//#  include <netinet/in.h>
+//#  define cbor_ntohs        ntohs
+//#  define cbor_htons        htons
 #endif
 #ifndef cbor_ntohl
-#  include <arpa/inet.h>
-#  define cbor_ntohl        ntohl
-#  define cbor_htonl        htonl
+//#  include <netinet/in.h>
+//#  define cbor_ntohl        ntohl
+//#  define cbor_htonl        htonl
+#  	define cbor_ntohl(x)     ((((uint32_t)x >> 24) & 0xff) | (((uint32_t)x >> 8) & 0xff00) | (((uint32_t)x & 0xff00) << 8) | (((uint32_t)x & 0xff) << 24))
+#  	define cbor_htonl        cbor_ntohl
 #endif
 #ifndef cbor_ntohll
 #  define cbor_ntohll       ntohll
@@ -173,7 +177,10 @@
     (defined(BYTE_ORDER) && defined(LITTLE_ENDIAN) && BYTE_ORDER == LITTLE_ENDIAN) || \
     defined(_LITTLE_ENDIAN) || defined(__LITTLE_ENDIAN__) || defined(__ARMEL__) || defined(__MIPSEL__) || \
     defined(__i386) || defined(__i386__) || defined(__x86_64) || defined(__x86_64__) || defined(__amd64)
-#      define ntohll(x)       ((ntohl((uint32_t)(x)) * UINT64_C(0x100000000)) + (ntohl((x) >> 32)))
+#      define ntohll(x)       ((cbor_ntohl((uint32_t)(x)) * UINT64_C(0x100000000)) + (cbor_ntohl((x) >> 32)))
+#      define htonll          ntohll
+#	 elif __little_endian__ == 1
+#      define ntohll(x)       ((cbor_ntohl(((uint32_t)(x))) * UINT64_C(0x100000000)) + (cbor_ntohl(((x) >> 32))))
 #      define htonll          ntohll
 #    else
 #      error "Unable to determine byte order!"
